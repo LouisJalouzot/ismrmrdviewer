@@ -1,9 +1,8 @@
-
-import os
 import logging
-from PySide2 import QtCore
-from PySide2 import QtWidgets
-from PySide2.QtCore import Signal, Slot
+import os
+
+from PySide6 import QtCore, QtWidgets
+from PySide6.QtCore import Signal, Slot
 
 from .FileWidget import FileWidget
 
@@ -29,7 +28,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self,
             "Open ISMRMRD Data File",
             os.getcwd(),
-            "ISMRMRD Data Files (*.h5 *.mrd);;All Files (*)"
+            "ISMRMRD Data Files (*.h5 *.mrd);;All Files (*)",
         )
 
         if not file_name:
@@ -41,5 +40,3 @@ class MainWindow(QtWidgets.QMainWindow):
         logging.info(f"Opening file: {file_name}")
         self.setWindowFilePath(file_name)
         self.setCentralWidget(FileWidget(self, file_name))
-
-

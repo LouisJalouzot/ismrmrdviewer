@@ -1,109 +1,134 @@
 import logging
 
-from PySide2 import QtWidgets, QtCore, QtGui
-from PySide2.QtCore import Qt
-
-import numpy as np
 import matplotlib as mpl
-import matplotlib.pyplot as plt
 import matplotlib.figure as figure
-from matplotlib.backends.backend_qt5agg import FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import Qt
+
 from .utils import CachedDataset
-
-
 
 
 def __acquisition_flag_names():
     names = {
-    0x01 << 0: 'ENCODE_STEP1::first',
-    0x01 << 1: 'ENCODE_STEP1::last',
-    0x01 << 2: 'ENCODE_STEP2::first',
-    0x01 << 3: 'ENCODE_STEP2::last',
-    0x01 << 4: 'AVERAGE::first',
-    0x01 << 5: 'AVERAGE::last',
-    0x01 << 6: 'SLICE::first',
-    0x01 << 7: 'SLICE::last',
-    0x01 << 8: 'CONTRAST::first',
-    0x01 << 9: 'CONTRAST::last',
-    0x01 << 10: 'PHASE::first',
-    0x01 << 11: 'PHASE::last',
-    0x01 << 12: 'REPETITION::first',
-    0x01 << 13: 'REPETITION::last',
-    0x01 << 14: 'SET::first',
-    0x01 << 15: 'SET::last',
-    0x01 << 16: 'SEGMENT::first',
-    0x01 << 17: 'SEGMENT::last',
-    0x01 << 18: 'NOISE_MEASUREMENT',
-    0x01 << 19: 'PARALLEL_CALIBRATION',
-    0x01 << 20: 'PARALLEL_CALIBRATION_AND_IMAGING',
-    0x01 << 21: 'REVERSE',
-    0x01 << 22: 'NAVIGATION_DATA',
-    0x01 << 23: 'PHASE_CORRECTION_DATA',
-    0x01 << 24: 'MEASUREMENT::last',
-    0x01 << 25: 'HP_FEEDBACK_DATA',
-    0x01 << 26: 'DUMMY_DATA',
-    0x01 << 27: 'RT_FEEDBACK_DATA',
-    0x01 << 28: 'SURFACE_COIL_CORRECTION_DATA',
-    0x01 << 29: 'PHASE_STABILIZATION_REFERENCE',
-    0x01 << 30: 'PHASE_STABILIZATION',
-
-    0x01 << 52: 'COMPRESSION::1',
-    0x01 << 53: 'COMPRESSION::2',
-    0x01 << 54: 'COMPRESSION::3',
-    0x01 << 55: 'COMPRESSION::4',
-
-    0x01 << 56: 'USER::1',
-    0x01 << 57: 'USER::2',
-    0x01 << 58: 'USER::3',
-    0x01 << 59: 'USER::4',
-    0x01 << 60: 'USER::5',
-    0x01 << 61: 'USER::6',
-    0x01 << 62: 'USER::7',
-    0x01 << 63: 'USER::8',
+        0x01 << 0: "ENCODE_STEP1::first",
+        0x01 << 1: "ENCODE_STEP1::last",
+        0x01 << 2: "ENCODE_STEP2::first",
+        0x01 << 3: "ENCODE_STEP2::last",
+        0x01 << 4: "AVERAGE::first",
+        0x01 << 5: "AVERAGE::last",
+        0x01 << 6: "SLICE::first",
+        0x01 << 7: "SLICE::last",
+        0x01 << 8: "CONTRAST::first",
+        0x01 << 9: "CONTRAST::last",
+        0x01 << 10: "PHASE::first",
+        0x01 << 11: "PHASE::last",
+        0x01 << 12: "REPETITION::first",
+        0x01 << 13: "REPETITION::last",
+        0x01 << 14: "SET::first",
+        0x01 << 15: "SET::last",
+        0x01 << 16: "SEGMENT::first",
+        0x01 << 17: "SEGMENT::last",
+        0x01 << 18: "NOISE_MEASUREMENT",
+        0x01 << 19: "PARALLEL_CALIBRATION",
+        0x01 << 20: "PARALLEL_CALIBRATION_AND_IMAGING",
+        0x01 << 21: "REVERSE",
+        0x01 << 22: "NAVIGATION_DATA",
+        0x01 << 23: "PHASE_CORRECTION_DATA",
+        0x01 << 24: "MEASUREMENT::last",
+        0x01 << 25: "HP_FEEDBACK_DATA",
+        0x01 << 26: "DUMMY_DATA",
+        0x01 << 27: "RT_FEEDBACK_DATA",
+        0x01 << 28: "SURFACE_COIL_CORRECTION_DATA",
+        0x01 << 29: "PHASE_STABILIZATION_REFERENCE",
+        0x01 << 30: "PHASE_STABILIZATION",
+        0x01 << 52: "COMPRESSION::1",
+        0x01 << 53: "COMPRESSION::2",
+        0x01 << 54: "COMPRESSION::3",
+        0x01 << 55: "COMPRESSION::4",
+        0x01 << 56: "USER::1",
+        0x01 << 57: "USER::2",
+        0x01 << 58: "USER::3",
+        0x01 << 59: "USER::4",
+        0x01 << 60: "USER::5",
+        0x01 << 61: "USER::6",
+        0x01 << 62: "USER::7",
+        0x01 << 63: "USER::8",
     }
 
-    for i in range(31,52):
-        names[0x01 << i] = f'UNKNOWN::{i}'
-    return names 
+    for i in range(31, 52):
+        names[0x01 << i] = f"UNKNOWN::{i}"
+    return names
 
 
-acquisition_flags = __acquisition_flag_names() 
+acquisition_flags = __acquisition_flag_names()
 
 
 acquisition_header_fields = [
-    ('version', 'Version', "ISMRMRD Version"),
-    ('flags', 'Flags', "Acquisition flags bitfield."),
-    ('measurement_uid', 'UID', "Unique ID for the measurement."),
-    ('scan_counter', 'Scan Counter', "Current acquisition number in the measurement."),
-    ('idx.kspace_encode_step_1', 'Encode Step1', "Encoding Counters"),
-    ('idx.kspace_encode_step_2', 'Encode Step2', "Encoding Counters"),
-    ('idx.average', 'Average', "Encoding Counters"),
-    ('idx.slice', 'Slice', "Encoding Counters"),
-    ('idx.contrast', 'Contrast', "Encoding Counters"),
-    ('idx.phase', 'Phase', "Encoding Counters"),
-    ('idx.repetition', 'Repetition', "Encoding Counters"),
-    ('idx.set', 'Set', "Encoding Counters"),
-    ('idx.segment', 'Segment', "Encoding Counters"),    ('acquisition_time_stamp', 'Acquisition Timestamp', "Acquisition Timestamp"),
-    ('physiology_time_stamp', 'Physiology Timestamps', "Physiology Timestamps (e.g. ecg, breathing, etc.)"),
-    ('number_of_samples', 'Samples', "Number of samples acquired."),
-    ('available_channels', 'Available Channels', "Number of available channels."),
-    ('active_channels', 'Active Channels', "Number of channels currently active."),
-    ('channel_mask', 'Channel Mask', "A binary mask indicating which channels are active."),
-    ('discard_pre', 'Prefix Discard', "Samples to be discarded at the beginning of the acquisition."),
-    ('discard_post', 'Postfix Discard', "Samples to be discarded at the end of the acquisition."),
-    ('center_sample', 'Center Sample', "Sample at the center of k-space."),
-    ('encoding_space_ref', 'Encoding Space', "Acquisition encoding space reference."),
-    ('trajectory_dimensions', 'Trajectory Dimensions', "Dimensionality of the trajectory vector."),
-    ('sample_time_us', 'Sample Time', "Time between samples (in microseconds), sampling BW."),
-    ('position', 'Position', "Three-dimensional spacial offsets from isocenter."),
-    ('read_dir', 'Read Direction', "Directional cosines of the readout/frequency encoding."),
-    ('phase_dir', 'Phase Direction', "Directional cosines of the phase."),
-    ('slice_dir', 'Slice Direction', "Directional cosines of the slice direction."),
-    ('patient_table_position', 'Patient Table', "Patient table off-center."),
-    ('idx.user', 'User Idx', "Encoding Counters"),
-    ('user_int', 'User Integers', "Free user parameters."),
-    ('user_float', 'User Floats', "Free user parameters.")
+    ("version", "Version", "ISMRMRD Version"),
+    ("flags", "Flags", "Acquisition flags bitfield."),
+    ("measurement_uid", "UID", "Unique ID for the measurement."),
+    ("scan_counter", "Scan Counter", "Current acquisition number in the measurement."),
+    ("idx.kspace_encode_step_1", "Encode Step1", "Encoding Counters"),
+    ("idx.kspace_encode_step_2", "Encode Step2", "Encoding Counters"),
+    ("idx.average", "Average", "Encoding Counters"),
+    ("idx.slice", "Slice", "Encoding Counters"),
+    ("idx.contrast", "Contrast", "Encoding Counters"),
+    ("idx.phase", "Phase", "Encoding Counters"),
+    ("idx.repetition", "Repetition", "Encoding Counters"),
+    ("idx.set", "Set", "Encoding Counters"),
+    ("idx.segment", "Segment", "Encoding Counters"),
+    ("acquisition_time_stamp", "Acquisition Timestamp", "Acquisition Timestamp"),
+    (
+        "physiology_time_stamp",
+        "Physiology Timestamps",
+        "Physiology Timestamps (e.g. ecg, breathing, etc.)",
+    ),
+    ("number_of_samples", "Samples", "Number of samples acquired."),
+    ("available_channels", "Available Channels", "Number of available channels."),
+    ("active_channels", "Active Channels", "Number of channels currently active."),
+    (
+        "channel_mask",
+        "Channel Mask",
+        "A binary mask indicating which channels are active.",
+    ),
+    (
+        "discard_pre",
+        "Prefix Discard",
+        "Samples to be discarded at the beginning of the acquisition.",
+    ),
+    (
+        "discard_post",
+        "Postfix Discard",
+        "Samples to be discarded at the end of the acquisition.",
+    ),
+    ("center_sample", "Center Sample", "Sample at the center of k-space."),
+    ("encoding_space_ref", "Encoding Space", "Acquisition encoding space reference."),
+    (
+        "trajectory_dimensions",
+        "Trajectory Dimensions",
+        "Dimensionality of the trajectory vector.",
+    ),
+    (
+        "sample_time_us",
+        "Sample Time",
+        "Time between samples (in microseconds), sampling BW.",
+    ),
+    ("position", "Position", "Three-dimensional spacial offsets from isocenter."),
+    (
+        "read_dir",
+        "Read Direction",
+        "Directional cosines of the readout/frequency encoding.",
+    ),
+    ("phase_dir", "Phase Direction", "Directional cosines of the phase."),
+    ("slice_dir", "Slice Direction", "Directional cosines of the slice direction."),
+    ("patient_table_position", "Patient Table", "Patient table off-center."),
+    ("idx.user", "User Idx", "Encoding Counters"),
+    ("user_int", "User Integers", "Free user parameters."),
+    ("user_float", "User Floats", "Free user parameters."),
 ]
 
 
@@ -114,28 +139,27 @@ class AcquisitionModel(QtCore.QAbstractTableModel):
         self.acquisitions = CachedDataset(container.acquisitions)
 
         self.data_handlers = {
-            'flags': self.__flags_handler,
-            'idx.kspace_encode_step_1': self.__encoding_counters_handler,
-            'idx.kspace_encode_step_2': self.__encoding_counters_handler,
-            'idx.average': self.__encoding_counters_handler,
-            'idx.slice': self.__encoding_counters_handler,
-            'idx.contrast': self.__encoding_counters_handler,
-            'idx.phase': self.__encoding_counters_handler,
-            'idx.repetition': self.__encoding_counters_handler,
-            'idx.set': self.__encoding_counters_handler,
-            'idx.segment': self.__encoding_counters_handler,
-            'idx.user': self.__user_encoding_counters_handler,
-            'physiology_time_stamp': self.__array_handler,
-            'channel_mask': self.__array_handler,
-            'position': self.__array_handler,
-            'read_dir': self.__array_handler,
-            'phase_dir': self.__array_handler,
-            'slice_dir': self.__array_handler,
-            'patient_table_position': self.__array_handler,
-            'user_int': self.__array_handler,
-            'user_float': self.__array_handler
+            "flags": self.__flags_handler,
+            "idx.kspace_encode_step_1": self.__encoding_counters_handler,
+            "idx.kspace_encode_step_2": self.__encoding_counters_handler,
+            "idx.average": self.__encoding_counters_handler,
+            "idx.slice": self.__encoding_counters_handler,
+            "idx.contrast": self.__encoding_counters_handler,
+            "idx.phase": self.__encoding_counters_handler,
+            "idx.repetition": self.__encoding_counters_handler,
+            "idx.set": self.__encoding_counters_handler,
+            "idx.segment": self.__encoding_counters_handler,
+            "idx.user": self.__user_encoding_counters_handler,
+            "physiology_time_stamp": self.__array_handler,
+            "channel_mask": self.__array_handler,
+            "position": self.__array_handler,
+            "read_dir": self.__array_handler,
+            "phase_dir": self.__array_handler,
+            "slice_dir": self.__array_handler,
+            "patient_table_position": self.__array_handler,
+            "user_int": self.__array_handler,
+            "user_float": self.__array_handler,
         }
-
 
     def rowCount(self, _=None):
         return len(self.acquisitions)
@@ -162,10 +186,12 @@ class AcquisitionModel(QtCore.QAbstractTableModel):
 
         if role == Qt.DisplayRole:
             acquisition = self.acquisitions[index.row()]
-            handler = self.data_handlers.get(attribute, lambda acq, attr: getattr(acq, attr))
+            handler = self.data_handlers.get(
+                attribute, lambda acq, attr: getattr(acq, attr)
+            )
             return handler(acquisition, attribute)
         if role == Qt.ToolTipRole:
-            if attribute == 'flags':
+            if attribute == "flags":
                 # decode flag names from bitfield
                 acquisition = self.acquisitions[index.row()]
                 flags = self.acquisitions[index.row()].flags
@@ -180,16 +206,16 @@ class AcquisitionModel(QtCore.QAbstractTableModel):
 
     @staticmethod
     def __flag_labels(flags):
-        return [label for flag,label in  acquisition_flags.items() if flags & flag]        
+        return [label for flag, label in acquisition_flags.items() if flags & flag]
 
     @staticmethod
     def __flags_handler(acquisition, attribute):
-        return ', '.join(AcquisitionModel.__flag_labels(getattr(acquisition,attribute)))
+        return ", ".join(AcquisitionModel.__flag_labels(getattr(acquisition, attribute)))
 
     @staticmethod
     def __array_handler(acquisition, attribute):
         array = getattr(acquisition, attribute)
-        return ', '.join([str(item) for item in array])
+        return ", ".join([str(item) for item in array])
 
     @staticmethod
     def __encoding_counters_handler(acquisition, attribute):
@@ -198,17 +224,16 @@ class AcquisitionModel(QtCore.QAbstractTableModel):
     @staticmethod
     def __user_encoding_counters_handler(acquisition, attribute):
         array = getattr(acquisition.idx, attribute[4:])
-        return ', '.join([str(item) for item in array])
-    
-  
+        return ", ".join([str(item) for item in array])
+
     @staticmethod
     def __get_flags_tooltip(flags):
         labels = AcquisitionModel.__flag_labels(flags)
-        tooltip = '\n'.join(labels)
+        tooltip = "\n".join(labels)
         if not tooltip:
             # fill empty tooltip
             tooltip = "No flags set"
-  
+
         return tooltip
 
 
@@ -229,10 +254,20 @@ class AcquisitionControlGUI(QtWidgets.QWidget):
         super().__init__()
         layout = QtWidgets.QHBoxLayout()
         self.data_processing = QtWidgets.QComboBox()
-        self.data_processing.addItem("Mag./Phase", userData={"names": ("Magnitude", "Phase"),
-                                                             "transform": lambda x: (np.abs(x), np.angle(x))})
-        self.data_processing.addItem("Real/Imag", userData={"names": ("Real", "Imag."),
-                                                            "transform": lambda x: (np.real(x), np.imag(x))})
+        self.data_processing.addItem(
+            "Mag./Phase",
+            userData={
+                "names": ("Magnitude", "Phase"),
+                "transform": lambda x: (np.abs(x), np.angle(x)),
+            },
+        )
+        self.data_processing.addItem(
+            "Real/Imag",
+            userData={
+                "names": ("Real", "Imag."),
+                "transform": lambda x: (np.real(x), np.imag(x)),
+            },
+        )
         layout.addWidget(self.data_processing)
 
         self.channel_selector = QtWidgets.QComboBox()
@@ -246,11 +281,21 @@ class AcquisitionControlGUI(QtWidgets.QWidget):
             self.channel_selector.removeItem(i)
 
         for idx in range(num_channels):
-            self.channel_selector.addItem("Channel " + str(idx), userData={"selector": lambda x, i=idx : x[:, i:i + 1],
-                                                                           "labeler": lambda scan, coil: str(scan)})
+            self.channel_selector.addItem(
+                "Channel " + str(idx),
+                userData={
+                    "selector": lambda x, i=idx: x[:, i : i + 1],
+                    "labeler": lambda scan, coil: str(scan),
+                },
+            )
 
-        self.channel_selector.addItem("All Channels", userData={"selector": lambda x: x,
-                                                                "labeler": lambda scan, coil: str((scan, coil))})
+        self.channel_selector.addItem(
+            "All Channels",
+            userData={
+                "selector": lambda x: x,
+                "labeler": lambda scan, coil: str((scan, coil)),
+            },
+        )
 
     def label(self, scan, coil):
         return self.channel_selector.currentData()["labeler"](scan, coil)
@@ -259,7 +304,9 @@ class AcquisitionControlGUI(QtWidgets.QWidget):
         return self.data_processing.currentData()["names"]
 
     def transform_acquisition(self, acq):
-        return self.data_processing.currentData()["transform"](self.channel_selector.currentData()["selector"](acq))
+        return self.data_processing.currentData()["transform"](
+            self.channel_selector.currentData()["selector"](acq)
+        )
 
 
 class AcquisitionPlotter(FigureCanvas):
@@ -267,7 +314,7 @@ class AcquisitionPlotter(FigureCanvas):
     def __init__(self):
 
         self.figure = mpl.figure.Figure()
-        self.axis = self.figure.subplots(2, 1, sharex='col')
+        self.axis = self.figure.subplots(2, 1, sharex="col")
         self.figure.subplots_adjust(hspace=0)
 
         self.legend = mpl.legend.Legend(self.figure, [], [])
@@ -285,7 +332,9 @@ class AcquisitionPlotter(FigureCanvas):
             x_step = acquisition.sample_time_us
             x_scale = np.arange(0, acquisition1.shape[0] * x_step, x_step)
             for coil, acq1 in enumerate(acquisition1.T):
-                self.axis[0].plot(x_scale, acq1, label=labeler(acquisition.scan_counter, coil))
+                self.axis[0].plot(
+                    x_scale, acq1, label=labeler(acquisition.scan_counter, coil)
+                )
             self.axis[1].plot(x_scale, acquisition2)
 
         handles, labels = self.axis[0].get_legend_handles_labels()
@@ -317,13 +366,17 @@ class TrajectoryControlGUI(QtWidgets.QWidget):
 
         self.trajectory_selector.clear()
         for dim in range(available):
-            self.trajectory_selector.addItem("Dimension: " + str(dim),
-                                             userData=(dim, lambda acq, d: str((acq.scan_counter, d))))
+            self.trajectory_selector.addItem(
+                "Dimension: " + str(dim),
+                userData=(dim, lambda acq, d: str((acq.scan_counter, d))),
+            )
 
         self.trajectory_selector.setCurrentIndex(selected)
 
     def select(self, acquisition):
-        dim, labeller = self.trajectory_selector.currentData() or self.trajectory_selector.itemData(0)
+        dim, labeller = (
+            self.trajectory_selector.currentData() or self.trajectory_selector.itemData(0)
+        )
         return acquisition.traj[:, dim], labeller(acquisition, dim)
 
 
@@ -371,7 +424,9 @@ class AcquisitionViewer(QtWidgets.QSplitter):
         self.acquisitions.setModel(self.model)
         self.acquisitions.setAlternatingRowColors(True)
         self.acquisitions.resizeColumnsToContents()
-        self.acquisitions.setColumnWidth(1, 96)  # Start the flags out small; full width is a little ostentatious.
+        self.acquisitions.setColumnWidth(
+            1, 96
+        )  # Start the flags out small; full width is a little ostentatious.
         self.acquisitions.selection_changed.connect(self.selection_changed)
         self.acquisitions.pressed.connect(self.mouse_clicked)
 
@@ -394,8 +449,12 @@ class AcquisitionViewer(QtWidgets.QSplitter):
             self.canvas = AcquisitionPlotter()
             self.acquisition_gui = AcquisitionControlGUI(self.model.num_coils())
 
-            self.acquisition_gui.data_processing.currentIndexChanged.connect(self.selection_changed)
-            self.acquisition_gui.channel_selector.currentIndexChanged.connect(self.selection_changed)
+            self.acquisition_gui.data_processing.currentIndexChanged.connect(
+                self.selection_changed
+            )
+            self.acquisition_gui.channel_selector.currentIndexChanged.connect(
+                self.selection_changed
+            )
 
             return create_panel(self.canvas, self.acquisition_gui)
 
@@ -403,7 +462,9 @@ class AcquisitionViewer(QtWidgets.QSplitter):
             self.trajectory_canvas = TrajectoryPlotter()
             self.trajectory_gui = TrajectoryControlGUI()
 
-            self.trajectory_gui.trajectory_selector.currentIndexChanged.connect(self.selection_changed)
+            self.trajectory_gui.trajectory_selector.currentIndexChanged.connect(
+                self.selection_changed
+            )
 
             return create_panel(self.trajectory_canvas, self.trajectory_gui)
 
@@ -438,14 +499,20 @@ class AcquisitionViewer(QtWidgets.QSplitter):
         self.canvas.plot(acquisitions, self.format_data, self.acquisition_gui.label)
 
     def update_trajectory(self, acquisitions):
-        self.trajectory_panel.setVisible(any(acquisition.trajectory_dimensions for acquisition in acquisitions))
+        self.trajectory_panel.setVisible(
+            any(acquisition.trajectory_dimensions for acquisition in acquisitions)
+        )
         self.update_trajectory_gui(acquisitions)
         self.update_trajectory_canvas(acquisitions)
 
     def update_trajectory_gui(self, acquisitions):
-        self.trajectory_gui.trajectory_selector.currentIndexChanged.disconnect(self.selection_changed)
+        self.trajectory_gui.trajectory_selector.currentIndexChanged.disconnect(
+            self.selection_changed
+        )
         self.trajectory_gui.update_available_trajectory_dimensions(acquisitions)
-        self.trajectory_gui.trajectory_selector.currentIndexChanged.connect(self.selection_changed)
+        self.trajectory_gui.trajectory_selector.currentIndexChanged.connect(
+            self.selection_changed
+        )
 
     def update_trajectory_canvas(self, acquisitions):
         self.trajectory_canvas.clear()
@@ -453,10 +520,10 @@ class AcquisitionViewer(QtWidgets.QSplitter):
         self.trajectory_canvas.plot(acquisitions, self.trajectory_gui.select)
 
     def mouse_clicked(self, index):
-        if not QtGui.QGuiApplication.mouseButtons() & Qt.RightButton:
+        if not QtGui.QGuiApplication.mouseButtons() & Qt.MouseButton.RightButton:
             return
         menu = QtWidgets.QMenu(self)
-        DeleteAction = QtWidgets.QAction('Delete', self)
+        DeleteAction = QtWidgets.QAction("Delete", self)
         y = index.column()
         DeleteAction.triggered.connect(lambda: self.acquisitions.hideColumn(y))
         menu.addAction(DeleteAction)

@@ -4,15 +4,9 @@ ISMRMRDVIEWER is a python package to view ISMRMRD/MRD (vendor agnostic MRI data 
 
 # Installation
 
-
-
-```cmd 
-pip3 install git+https://github.com/ismrmrd/ismrmrdviewer.git
-OR
-pip install git+https://github.com/ismrmrd/ismrmrdviewer.git
+```bash
+uv tool install git+https://github.com/LouisJalouzot/ismrmrdviewer.git
 ```
-### Note!
-You may need to manually download the test datasets in res/.
 
 # Usage
 ## Start UI

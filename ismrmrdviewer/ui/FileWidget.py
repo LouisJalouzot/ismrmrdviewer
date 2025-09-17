@@ -1,10 +1,14 @@
-
 import ismrmrd
+from PySide6 import QtWidgets
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QCursor, QGuiApplication
 
-from PySide2 import QtWidgets
-from PySide2.QtCore import Qt
-from PySide2.QtGui import QGuiApplication, QCursor
-from ismrmrdviewer.viewer import HeaderViewer, ImageViewer, AcquisitionViewer, WaveformViewer
+from ismrmrdviewer.viewer import (
+    AcquisitionViewer,
+    HeaderViewer,
+    ImageViewer,
+    WaveformViewer,
+)
 
 
 class FileWidget(QtWidgets.QSplitter):
@@ -14,9 +18,11 @@ class FileWidget(QtWidgets.QSplitter):
 
         self.tree = QtWidgets.QTreeWidget(self)
         self.tree.setHeaderHidden(True)
-        self.tree.itemClicked.connect(lambda widget, _: self.set_viewer(widget.container, widget.viewer))
+        self.tree.itemClicked.connect(
+            lambda widget, _: self.set_viewer(widget.container, widget.viewer)
+        )
 
-        FileWidget.__populate_tree(self.tree, ismrmrd.File(file_name, mode='r'))
+        FileWidget.__populate_tree(self.tree, ismrmrd.File(file_name, mode="r"))
 
         self.viewer = QtWidgets.QListWidget(self)
 
@@ -42,10 +48,10 @@ class FileWidget(QtWidgets.QSplitter):
     def __available_contents(container):
 
         viewers = {
-            'header': ('Header', HeaderViewer),
-            'images': ('Images', ImageViewer),
-            'waveforms': ('Waveforms', WaveformViewer),
-            'acquisitions': ('Acquisitions', AcquisitionViewer)
+            "header": ("Header", HeaderViewer),
+            "images": ("Images", ImageViewer),
+            "waveforms": ("Waveforms", WaveformViewer),
+            "acquisitions": ("Acquisitions", AcquisitionViewer),
         }
 
         return [viewers[key] for key in container.available()]
@@ -62,5 +68,15 @@ class FileWidget(QtWidgets.QSplitter):
                 content = QtWidgets.QTreeWidgetItem(child, [content])
                 content.container = container[item]
                 content.viewer = viewer
+
+            FileWidget.__populate_tree(child, container[item])
+            content = QtWidgets.QTreeWidgetItem(child, [content])
+            content.container = container[item]
+            content.viewer = viewer
+
+            FileWidget.__populate_tree(child, container[item])
+            content = QtWidgets.QTreeWidgetItem(child, [content])
+            content.container = container[item]
+            content.viewer = viewer
 
             FileWidget.__populate_tree(child, container[item])
