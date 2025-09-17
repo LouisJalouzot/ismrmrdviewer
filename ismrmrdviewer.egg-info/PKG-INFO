@@ -1,0 +1,55 @@
+Metadata-Version: 2.1
+Name: ismrmrdviewer
+Version: 0.2.1
+Summary: Simple tool for viewing ISMRMRD data.
+Author-email: Kristoffer Langeland Knudsen <kristofferlknudsen@gradientsoftware.net>
+License: MIT
+Project-URL: Homepage, https://github.com/LouisJalouzot/ismrmrdviewer
+Project-URL: Repository, https://github.com/LouisJalouzot/ismrmrdviewer
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Science/Research
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Scientific/Engineering :: Medical Science Apps.
+Classifier: Topic :: Scientific/Engineering :: Visualization
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+
+# ISMRMRD Viewer
+
+ISMRMRDVIEWER is a python package to view ISMRMRD/MRD (vendor agnostic MRI data format) raw data (including xml, data, waveforms and trajectories) and images.
+
+# Installation
+
+
+
+```cmd 
+pip3 install git+https://github.com/ismrmrd/ismrmrdviewer.git
+OR
+pip install git+https://github.com/ismrmrd/ismrmrdviewer.git
+```
+### Note!
+You may need to manually download the test datasets in res/.
+
+# Usage
+## Start UI
+```bash
+ismrmrdviewer
+```
+
+## In UI
+- File>Open
+- Image series can be animated, and interactively windowed.
+- Raw data lines can be browsed individually, or selected in multiples.
+
+# Contributing
+Features are welcome.
+For major changes, please open an issue first to discuss what you would like to change.
+
+Please make sure to update tests as appropriate.
