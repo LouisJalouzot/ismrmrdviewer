@@ -1,7 +1,7 @@
 import logging
 import xml.etree.ElementTree as ET
 
-from PySide2 import QtWidgets, QtCore
+from PySide6 import QtCore, QtWidgets
 
 
 class HeaderViewer(QtWidgets.QTreeWidget):
@@ -12,7 +12,7 @@ class HeaderViewer(QtWidgets.QTreeWidget):
         self.container = container
 
         dom = container.header.toDOM()
-        xml = dom.toprettyxml(indent=4 * ' ')
+        xml = dom.toprettyxml(indent=4 * " ")
         root = ET.fromstring(xml)
 
         item = QtWidgets.QTreeWidgetItem(self)
@@ -27,7 +27,7 @@ class HeaderViewer(QtWidgets.QTreeWidget):
         for child in node:
             child_item = QtWidgets.QTreeWidgetItem(item)
             child_item.setText(0, child.tag[30:])
-            if (len(child) == 0):
+            if len(child) == 0:
                 child_item.setData(1, QtCore.Qt.EditRole, child.text)
                 item.addChild(child_item)
                 child_item.setExpanded(True)
@@ -35,5 +35,3 @@ class HeaderViewer(QtWidgets.QTreeWidget):
                 item.addChild(child_item)
                 self.populate(child_item, child)
                 child_item.setExpanded(True)
-
-
